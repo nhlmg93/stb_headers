@@ -64,8 +64,7 @@
 #ifndef ARENA_H
 #define ARENA_H
 
-#include <cstdint>
-#include <stdbool.h>
+#include <stdalign.h>
 #include <stdckdint.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -129,7 +128,7 @@ typedef uint64_t u64;
 /* API */
 
 /* Initialize arena with given capacity. Returns true on success. */
-ARENA_DEF bool arena_init(Arena *a, size_t capacity);
+[[nodiscard]] ARENA_DEF bool arena_init(Arena *a, size_t capacity);
 
 /* Free all memory and reset arena to zeroed state. */
 ARENA_DEF void arena_destroy(Arena *a);
@@ -139,12 +138,13 @@ ARENA_DEF void arena_reset(Arena *a);
 
 /* Allocate size bytes with given alignment. Returns NULL on failure.
    align must be a power of two. */
-ARENA_DEF void *arena_alloc(Arena *a, size_t size, size_t align);
+[[nodiscard]] ARENA_DEF void *arena_alloc(Arena *a, size_t size, size_t align);
 
 /* Allocate array of count elements, each of elem_size bytes.
    Returns NULL on overflow or allocation failure. */
-ARENA_DEF void *arena_alloc_array(Arena *a, size_t count, size_t elem_size,
-                                  size_t align);
+[[nodiscard]] ARENA_DEF void *arena_alloc_array(Arena *a, size_t count,
+                                                  size_t elem_size,
+                                                  size_t align);
 
 /* Convenience macros for allocating typed memory */
 #define arena_new(a, T) ((T *)arena_alloc((a), sizeof(T), alignof(T)))
@@ -162,7 +162,7 @@ ARENA_DEF void *arena_alloc_array(Arena *a, size_t count, size_t elem_size,
 #ifdef ARENA_IMPLEMENTATION
 
 ARENA_DEF bool arena_init(Arena *a, size_t capacity) {
-  ARENA_ASSERT(a != NULL);
+  ARENA_ASSERT(a != nullptr);
   a->base = (unsigned char *)ARENA_MALLOC(capacity);
   if (a->base == NULL)
     return false;
@@ -172,14 +172,14 @@ ARENA_DEF bool arena_init(Arena *a, size_t capacity) {
 }
 
 ARENA_DEF void arena_destroy(Arena *a) {
-  if (a == NULL)
+  if (a == nullptr)
     return;
   ARENA_FREE(a->base);
   ARENA_MEMSET(a, 0, sizeof(*a));
 }
 
 ARENA_DEF void arena_reset(Arena *a) {
-  ARENA_ASSERT(a != NULL);
+  ARENA_ASSERT(a != nullptr);
   a->used = 0;
 }
 
@@ -188,12 +188,12 @@ ARENA_DEF bool arena__is_power_of_two(size_t x) {
 }
 
 ARENA_DEF void *arena_alloc(Arena *a, size_t size, size_t align) {
-  ARENA_ASSERT(a != NULL);
+  ARENA_ASSERT(a != nullptr);
   ARENA_ASSERT(a->used <= a->capacity);
   ARENA_ASSERT(arena__is_power_of_two(align));
 
-  if (a->base == NULL)
-    return NULL;
+  if (a->base == nullptr)
+    return nullptr;
 
   if (!arena__is_power_of_two(align))
     return NULL;
